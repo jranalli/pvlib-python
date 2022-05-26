@@ -5,6 +5,7 @@ import warnings
 import numpy as np
 from numpy import array, nan
 import pandas as pd
+import dask.array as da
 
 import pytest
 from numpy.testing import assert_almost_equal, assert_allclose
@@ -955,6 +956,25 @@ def test_clearsky_index():
     out = irradiance.clearsky_index(ghi_measured, ghi_modeled)
     expected = pd.Series([0.2, 0.5], index=times)
     assert_series_equal(out, expected)
+    # frame
+    times = pd.date_range(start='20180601', periods=3, freq='12H')
+    ghi_measured = pd.DataFrame([[100,  100], [200, 200], [500, 500]], index=times)
+    ghi_modeled = pd.Series([500, 800, 1000], index=times)
+    out = irradiance.clearsky_index(ghi_measured, ghi_modeled)
+    expected = pd.DataFrame([[0.2, 0.2], [0.25, 0.25], [0.5, 0.5]], index=times)
+    assert_frame_equal(out, expected)
+    # dask
+    ghi_da = da.from_array(np.array([0.5, 1, .75]))
+    ghi_cs_da = da.from_array(np.array([1, 1, 1]))
+    out = irradiance.clearsky_index(ghi_da, ghi_cs_da).compute()
+    assert_allclose(out, array([0.5, 1., 0.75]))
+    # higher dims
+    ghi_td = np.array([[[100, 100], [100, 100]], [[200, 200], [200, 200]], [[500, 500], [500, 500]]])
+    ghi_cs = np.array([500, 800, 1000])
+    out = irradiance.clearsky_index(ghi_td, ghi_cs)
+    expected = np.array([[[0.2, 0.2], [0.2, 0.2]], [[0.25, 0.25], [0.25, 0.25]], [[0.5, 0.5], [0.5, 0.5]]])
+    assert_allclose(out, expected)
+
 
 
 def test_clearness_index():

@@ -1199,21 +1199,27 @@ def clearsky_index(ghi, clearsky_ghi, max_clearsky_index=2.0):
     clearsky_index : numeric
         Clearsky index
     """
+    # Broadcast inputs
+    while np.ndim(ghi) > np.ndim(clearsky_ghi):
+        clearsky_ghi = np.expand_dims(clearsky_ghi, axis=-1)
+
     clearsky_index = ghi / clearsky_ghi
+    if np.isscalar(clearsky_index):
+        scalar_out = True
+        clearsky_index = np.asarray(clearsky_index)
+    else:
+        scalar_out = False
     # set +inf, -inf, and nans to zero
-    clearsky_index = np.where(~np.isfinite(clearsky_index), 0,
-                              clearsky_index)
+    clearsky_index[~np.isfinite(clearsky_index)] = 0
     # but preserve nans in the input arrays
     input_is_nan = ~np.isfinite(ghi) | ~np.isfinite(clearsky_ghi)
-    clearsky_index = np.where(input_is_nan, np.nan, clearsky_index)
+    clearsky_index[input_is_nan] = np.nan
 
     clearsky_index = np.maximum(clearsky_index, 0)
     clearsky_index = np.minimum(clearsky_index, max_clearsky_index)
 
-    # preserve input type
-    if isinstance(ghi, pd.Series):
-        clearsky_index = pd.Series(clearsky_index, index=ghi.index)
-
+    if scalar_out:
+        return clearsky_index.item()
     return clearsky_index
 
 
