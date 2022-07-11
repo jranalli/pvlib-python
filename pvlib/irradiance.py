@@ -1202,6 +1202,8 @@ def clearsky_index(ghi, clearsky_ghi, max_clearsky_index=2.0):
     # Broadcast inputs
     while np.ndim(ghi) > np.ndim(clearsky_ghi):
         clearsky_ghi = np.expand_dims(clearsky_ghi, axis=-1)
+    while np.ndim(clearsky_ghi) > np.ndim(ghi):
+        ghi = np.expand_dims(ghi, axis=-1)
 
     clearsky_index = ghi / clearsky_ghi
     if np.isscalar(clearsky_index):

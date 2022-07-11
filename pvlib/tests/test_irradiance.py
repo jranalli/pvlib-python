@@ -945,30 +945,37 @@ def test_clearsky_index():
          [0.    , 0.    , 0.001 , 0.5   , 1.    , np.nan],
          [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan]])
     assert_allclose(out, expected, atol=0.001)
-    # scalars
+    # GHI & CS both scalars
     out = irradiance.clearsky_index(10, 1000)
     expected = 0.01
     assert_allclose(out, expected, atol=0.001)
-    # series
+    # GHI series & CS series
     times = pd.date_range(start='20180601', periods=2, freq='12H')
     ghi_measured = pd.Series([100,  500], index=times)
     ghi_modeled = pd.Series([500, 1000], index=times)
     out = irradiance.clearsky_index(ghi_measured, ghi_modeled)
     expected = pd.Series([0.2, 0.5], index=times)
     assert_series_equal(out, expected)
-    # frame
+    # GHI 2D frame & CS 1D series
     times = pd.date_range(start='20180601', periods=3, freq='12H')
     ghi_measured = pd.DataFrame([[100,  100], [200, 200], [500, 500]], index=times)
     ghi_modeled = pd.Series([500, 800, 1000], index=times)
     out = irradiance.clearsky_index(ghi_measured, ghi_modeled)
     expected = pd.DataFrame([[0.2, 0.2], [0.25, 0.25], [0.5, 0.5]], index=times)
     assert_frame_equal(out, expected)
-    # dask
+    # GHI 1D series & CS 2D frame
+    times = pd.date_range(start='20180601', periods=3, freq='12H')
+    ghi_measured = pd.Series([100,  200, 500], index=times)
+    ghi_modeled = pd.DataFrame([[500, 500], [800, 800], [1000, 1000]], index=times)
+    out = irradiance.clearsky_index(ghi_measured, ghi_modeled)
+    expected = pd.DataFrame([[0.2, 0.2], [0.25, 0.25], [0.5, 0.5]], index=times)
+    assert_frame_equal(out, expected)
+    # GHI & CS dask arrays
     ghi_da = da.from_array(np.array([0.5, 1, .75]))
     ghi_cs_da = da.from_array(np.array([1, 1, 1]))
     out = irradiance.clearsky_index(ghi_da, ghi_cs_da).compute()
     assert_allclose(out, array([0.5, 1., 0.75]))
-    # higher dims
+    # GHI 3-D & CS 1-D
     ghi_td = np.array([[[100, 100], [100, 100]], [[200, 200], [200, 200]], [[500, 500], [500, 500]]])
     ghi_cs = np.array([500, 800, 1000])
     out = irradiance.clearsky_index(ghi_td, ghi_cs)
